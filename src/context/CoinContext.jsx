@@ -22,16 +22,20 @@ const CoinContextProvider = (props)=>{
       const requestWithOptionalKey = async ({ includeKey, page }) => {
         const requestUrl = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`;
 
+        const headers = {
+          accept: "application/json",
+        };
+
+        if (includeKey) {
+          // Support both key header styles so user-provided keys continue working
+          // regardless of demo/pro key type.
+          headers["x-cg-demo-api-key"] = apiKey;
+          headers["x-cg-pro-api-key"] = apiKey;
+        }
+
         const response = await fetch(requestUrl, {
           method: "GET",
-          headers: includeKey
-            ? {
-                accept: "application/json",
-                "x-cg-demo-api-key": apiKey,
-              }
-            : {
-                accept: "application/json",
-              },
+          headers,
         });
 
         return response;
@@ -47,6 +51,12 @@ const CoinContextProvider = (props)=>{
           // If key-based request is rejected, retry once without key.
           if ((response.status === 401 || response.status === 403) && apiKey) {
             response = await requestWithOptionalKey({ includeKey: false, page });
+          }
+
+          // When throttled on later pages, keep already-fetched rows instead of failing the whole table.
+          if (response.status === 429 && allCoinsFromPages.length > 0) {
+            setError("Rate limit reached while loading more coins. Showing available results.");
+            break;
           }
 
           if (!response.ok) {
