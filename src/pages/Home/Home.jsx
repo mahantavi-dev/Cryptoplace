@@ -5,26 +5,36 @@ import { Link } from 'react-router-dom'
 
 const Home = () => {
 
-  const { allCoin, currency } = useContext(CoinContext)
+  const { allCoin, currency, isLoading, error } = useContext(CoinContext)
   const [displayCoin, setDisplayCoin] = useState([])
   const [search, setSearch] = useState("")
 
   // Set coins when API loads
   useEffect(() => {
-    if (allCoin) {
+    if (Array.isArray(allCoin)) {
       setDisplayCoin(allCoin)
     }
   }, [allCoin])
 
-  // Search handler
-  const handleSearch = (e) => {
-    e.preventDefault()
+  // Filter as user types so search always works and can be reset.
+  useEffect(() => {
+    if (!search.trim()) {
+      setDisplayCoin(allCoin)
+      return
+    }
 
+    const normalizedSearch = search.toLowerCase()
     const filtered = allCoin.filter((coin) =>
-      coin.name.toLowerCase().includes(search.toLowerCase())
+      coin.name.toLowerCase().includes(normalizedSearch) ||
+      coin.symbol.toLowerCase().includes(normalizedSearch)
     )
 
     setDisplayCoin(filtered)
+  }, [search, allCoin])
+
+  // Keep submit for UX consistency, but filtering is live.
+  const handleSearch = (e) => {
+    e.preventDefault()
   }
 
   return (
@@ -60,9 +70,14 @@ const Home = () => {
           <p className='market-cap'>Market Cap</p>
         </div>
 
+        {error && <p className='error-message'>{error}</p>}
+        {isLoading && <p>Loading latest prices...</p>}
+        {!isLoading && !error && displayCoin.length === 0 && (
+          <p className='error-message'>No cryptocurrencies found for your search.</p>
+        )}
+
         {
           displayCoin
-            .slice(0, 10)
             .map((item) => (
 
               <Link to={`/coin/${item.id}`} className="table-layout" key={item.id}>
