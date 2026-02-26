@@ -10,7 +10,8 @@ const CoinContextProvider = (props)=>{
     const[currency, setCurrency] = useState({
         name: "usd",
         symbol: "$"
-    })   
+    })
+    const apiKey = import.meta.env.VITE_COINGECKO_API_KEY;
 
     const fetchAllCoin = async () => {
       setIsLoading(true);
@@ -18,10 +19,13 @@ const CoinContextProvider = (props)=>{
 
       try {
         const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}`,
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
           {
             method: "GET",
-            headers: {
+            headers: apiKey ? {
+              accept: "application/json",
+              "x-cg-demo-api-key": apiKey,
+            } : {
               accept: "application/json",
             },
           }

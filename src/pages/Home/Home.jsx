@@ -16,15 +16,23 @@ const Home = () => {
     }
   }, [allCoin])
 
-  // Search handler
-  const handleSearch = (e) => {
-    e.preventDefault()
+  // Filter as user types so search always works and can be reset.
+  useEffect(() => {
+    if (!search.trim()) {
+      setDisplayCoin(allCoin)
+      return
+    }
 
     const filtered = allCoin.filter((coin) =>
       coin.name.toLowerCase().includes(search.toLowerCase())
     )
 
     setDisplayCoin(filtered)
+  }, [search, allCoin])
+
+  // Keep submit for UX consistency, but filtering is live.
+  const handleSearch = (e) => {
+    e.preventDefault()
   }
 
   return (
@@ -62,10 +70,12 @@ const Home = () => {
 
         {error && <p className='error-message'>{error}</p>}
         {isLoading && <p>Loading latest prices...</p>}
+        {!isLoading && !error && displayCoin.length === 0 && (
+          <p className='error-message'>No cryptocurrencies found for your search.</p>
+        )}
 
         {
           displayCoin
-            .slice(0, 10)
             .map((item) => (
 
               <Link to={`/coin/${item.id}`} className="table-layout" key={item.id}>
