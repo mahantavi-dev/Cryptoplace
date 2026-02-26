@@ -11,40 +11,66 @@ const CoinContextProvider = (props)=>{
         name: "usd",
         symbol: "$"
     })
-    const apiKey = import.meta.env.VITE_COINGECKO_API_KEY;
+    const apiKey = (import.meta.env.VITE_COINGECKO_API_KEY || "CG-MewF7bDQBGhJQLbQgSHQmiuw")
+      .replace(/\\n/g, "")
+      .trim();
 
     const fetchAllCoin = async () => {
       setIsLoading(true);
       setError("");
 
+      const requestWithOptionalKey = async ({ includeKey, page }) => {
+        const requestUrl = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}&order=market_cap_desc&per_page=250&page=${page}&sparkline=false`;
+
+        const response = await fetch(requestUrl, {
+          method: "GET",
+          headers: includeKey
+            ? {
+                accept: "application/json",
+                "x-cg-demo-api-key": apiKey,
+              }
+            : {
+                accept: "application/json",
+              },
+        });
+
+        return response;
+      };
+
       try {
-        const response = await fetch(
-          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency.name}&order=market_cap_desc&per_page=250&page=1&sparkline=false`,
-          {
-            method: "GET",
-            headers: apiKey ? {
-              accept: "application/json",
-              "x-cg-demo-api-key": apiKey,
-            } : {
-              accept: "application/json",
-            },
+        const maxPages = 4;
+        const allCoinsFromPages = [];
+
+        for (let page = 1; page <= maxPages; page += 1) {
+          let response = await requestWithOptionalKey({ includeKey: Boolean(apiKey), page });
+
+          // If key-based request is rejected, retry once without key.
+          if ((response.status === 401 || response.status === 403) && apiKey) {
+            response = await requestWithOptionalKey({ includeKey: false, page });
           }
-        );
 
-        if (!response.ok) {
-          throw new Error(`Failed to fetch coins (${response.status})`);
+          if (!response.ok) {
+            throw new Error(`Failed to fetch coins (${response.status})`);
+          }
+
+          const pageData = await response.json();
+
+          if (!Array.isArray(pageData)) {
+            throw new Error("Coin API returned an unexpected payload.");
+          }
+
+          allCoinsFromPages.push(...pageData);
+
+          // Stop early when API has no more data.
+          if (pageData.length < 250) {
+            break;
+          }
         }
 
-        const data = await response.json();
-
-        if (!Array.isArray(data)) {
-          throw new Error("Coin API returned an unexpected payload.");
-        }
-
-        setAllCoin(data);
+        setAllCoin(allCoinsFromPages);
       } catch (err) {
+        setError(err.message || "Unable to load coin data. Please verify your API key and rate limit.");
         setAllCoin([]);
-        setError(err.message || "Unable to load coin data.");
       } finally {
         setIsLoading(false);
       }

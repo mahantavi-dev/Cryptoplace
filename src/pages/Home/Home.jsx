@@ -23,8 +23,10 @@ const Home = () => {
       return
     }
 
+    const normalizedSearch = search.toLowerCase()
     const filtered = allCoin.filter((coin) =>
-      coin.name.toLowerCase().includes(search.toLowerCase())
+      coin.name.toLowerCase().includes(normalizedSearch) ||
+      coin.symbol.toLowerCase().includes(normalizedSearch)
     )
 
     setDisplayCoin(filtered)
