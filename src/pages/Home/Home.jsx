@@ -5,13 +5,13 @@ import { Link } from 'react-router-dom'
 
 const Home = () => {
 
-  const { allCoin, currency } = useContext(CoinContext)
+  const { allCoin, currency, isLoading, error } = useContext(CoinContext)
   const [displayCoin, setDisplayCoin] = useState([])
   const [search, setSearch] = useState("")
 
   // Set coins when API loads
   useEffect(() => {
-    if (allCoin) {
+    if (Array.isArray(allCoin)) {
       setDisplayCoin(allCoin)
     }
   }, [allCoin])
@@ -59,6 +59,9 @@ const Home = () => {
           <p style={{ textAlign: "center" }}>24H Change</p>
           <p className='market-cap'>Market Cap</p>
         </div>
+
+        {error && <p className='error-message'>{error}</p>}
+        {isLoading && <p>Loading latest prices...</p>}
 
         {
           displayCoin
