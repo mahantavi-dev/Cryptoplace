@@ -11,7 +11,7 @@ const CoinContextProvider = (props)=>{
         name: "usd",
         symbol: "$"
     })
-    const apiKey = (import.meta.env.VITE_COINGECKO_API_KEY || "CG-MewF7bDQBGhJQLbQgSHQmiuw")
+    const apiKey = (import.meta.env.VITE_COINGECKO_API_KEY || "cf4680fecb044b24ade4118ac68f094a")
       .replace(/\\n/g, "")
       .trim();
 
